@@ -178,9 +178,9 @@ void GameIntro(Player &p, int &playerChoice)
   }
 }
 
-void GameOutro(const char *playerName)
+void GameOutro(Player &p)
 {
-  cout << "Thank you, " << playerName << ", for saving us from this chaos. You have been of tremendous help. You came to our world, conquered the evil, and set us free! You must be HIM!" << endl;
+  cout << "Thank you, " << p.m_name << ", for saving us from this chaos. You have been of tremendous help. You came to our world, conquered the evil, and set us free! You must be HIM!" << endl;
 }
 
 void Battle(Player &p, Enemy &e)
@@ -269,7 +269,7 @@ void Battle(Player &p, Enemy &e)
       p.m_weapon_inventory.push_back(e.m_drop);
       p.Heal();
 
-      cout << "\nCongratulations, you have obtained a " << e.m_drop << ". It has been added to your inventory. And of course, your health has replenished!" << endl;
+      cout << "\n\nCongratulations, you have obtained a " << e.m_drop << ". It has been added to your inventory. And of course, your health has replenished!" << endl;
       cout << "\nWould you like to switch your weapon?" << endl
            << "1. Yes" << endl
            << "2. No" << endl;
@@ -307,6 +307,19 @@ void Battle(Player &p, Enemy &e)
     this_thread::sleep_for(chrono::seconds(1));
     ClearScreen();
 
+    // if player dies, leave the game
+    if (p.m_health <= 0)
+    {
+      cout << p.m_name << ", you died";
+      LoadingDots();
+      cout << "\n\nWith your demise, our only hope of survival has been demolished";
+      LoadingDots();
+      cout << "We hope you return soon";
+      LoadingDots();
+      HoldScreen("Press Enter to exit...");
+      exit(0);
+    }
+
     showStats(p, e);
 
     cout << "\nAlright, it's your turn again! Choose what to do:" << endl
@@ -323,10 +336,12 @@ int main()
   Player p;
   Enemy bsParasite("Blood Sucking Parasite", 50, 10, "dagger");
   Enemy beZombie("Brain Eating Zombie", 80, 20, "sword");
+  Enemy ftDragon("Flame Throwing Dragon", 150, 50, "dragon scales");
 
   // holds the playerChoice
   int playerChoice;
 
+  // game intro
   GameIntro(p, playerChoice);
 
   // adventure begins
@@ -339,13 +354,20 @@ int main()
 
   // encounters a brain eating zombie
   showStats(p, beZombie);
-  cout << "Oh, look out " << p.m_name << "! It's a Brain Eating Zombie!" << endl;
+  cout << "\nOh, look out " << p.m_name << "! It's a Brain Eating Zombie!" << endl;
 
   // battle brain eating zombie
   Battle(p, beZombie);
 
+  // encounters a flame throwing dragon
+  showStats(p, ftDragon);
+  cout << "\nIt couldn't get worse, could it?" << p.m_name << "It's a freaking DRAGON! A Flame Throwing Dragon!!" << endl;
+
+  // battle the dragon
+  Battle(p, ftDragon);
+
   // game outro
-  GameOutro(p.m_name);
+  GameOutro(p);
 
   HoldScreen("Press Enter key to exit...");
   return 0;
