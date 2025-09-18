@@ -1,6 +1,7 @@
 #include <iostream>
 #include <random>
 #include <thread>
+#include <vector>
 
 using namespace std;
 
@@ -15,7 +16,8 @@ enum PlayerAction
 {
   Attack = 1,
   Defend = 2,
-  Run = 3
+  ChangeWeapon = 3,
+  Run = 4
 };
 
 class Enemy;
@@ -27,18 +29,35 @@ public:
   int m_health;
   int m_attack;
   int m_defense;
+  vector<string> m_weapon_inventory;
+  int m_selected_weapon;
 
   Player()
   {
     m_health = 100;
     m_attack = PLAYER_BASE_ATTACK;
     m_defense = 0;
+    m_weapon_inventory.push_back("stick");
+    m_selected_weapon = 0;
   }
   void TakeDamage(int damage)
   {
     m_health -= damage;
   }
   void AttackEnemy(class Enemy &enemy, bool isCriticalHit);
+  void ShowWeapons()
+  {
+    int i = 1;
+    for (string weapon : m_weapon_inventory)
+    {
+      cout << i << ". " << weapon << endl;
+      i++;
+    }
+  }
+  void Heal()
+  {
+    m_health = 100;
+  }
 };
 
 class Enemy
@@ -47,13 +66,15 @@ public:
   std::string m_type;
   int m_health;
   int m_attack;
+  string m_drop;
 
   // constructor to initalize enemy health and attack
-  Enemy(const char *type, int health, int attack)
+  Enemy(const char *type, int health, int attack, string drop)
   {
     m_type = type;
     m_health = health;
     m_attack = attack;
+    m_drop = drop;
   }
 
   void DealDamage(class Player &player)
@@ -85,6 +106,7 @@ void showStats(Player &p, Enemy &e)
 {
   cout << p.m_name << "'s HP: " << p.m_health << "   |   "
        << e.m_type << "'s HP: " << e.m_health << endl;
+  cout << "Weapon in hand: " << p.m_weapon_inventory[p.m_selected_weapon] << endl;
 }
 
 void GameIntro(Player &p, int &playerChoice)
@@ -118,8 +140,10 @@ void Battle(Player &p, Enemy &e)
   int pAction;
   cout << "1. Attack" << endl
        << "2. Block Attack" << endl
-       << "3. Run" << endl;
+       << "3. Change Weapon" << endl
+       << "4. Run" << endl;
   cin >> pAction;
+
   if (pAction == Run)
   {
     cout << "You chose to run for some reason" << endl;
@@ -130,6 +154,8 @@ void Battle(Player &p, Enemy &e)
     }
     return;
   }
+
+  // main battle loop
   while (p.m_health > 0 && e.m_health > 0)
   {
     bool canBlock = false, choseDefend = false;
@@ -137,7 +163,7 @@ void Battle(Player &p, Enemy &e)
     {
     case Attack:
     {
-      cout << "Player attacks." << endl;
+      cout << "You attack it with your " << p.m_weapon_inventory[p.m_selected_weapon] << "." << endl;
 
       // generate a random number for critical hit
       uniform_int_distribution<> dist(1, 10);
@@ -173,6 +199,27 @@ void Battle(Player &p, Enemy &e)
       break;
     }
 
+    case ChangeWeapon:
+    {
+      int weaponChoice;
+      ClearScreen();
+      cout << "Choose Your Weapon: " << endl;
+      p.ShowWeapons();
+      cin >> weaponChoice;
+
+      // if player doesn't have the selected weapon, throw an error
+      if (weaponChoice < 1 || weaponChoice > p.m_weapon_inventory.size())
+      {
+        cout << "Oops! Seems like you don't own that weapon yet. Too late!" << endl;
+      }
+      else
+      {
+        cout << "Switching weapon";
+        p.m_selected_weapon = weaponChoice - 1;
+      }
+      break;
+    }
+
     default:
       cout << "Bad choice! Go again!" << endl;
       break;
@@ -191,11 +238,10 @@ void Battle(Player &p, Enemy &e)
       cout << "You defeated the " << e.m_type << "! That was craaaazyyyyy!" << endl;
       this_thread::sleep_for(chrono::seconds(2));
 
-      cout << endl
-           << "It dropped a piece of parchment. You pick it up and open it. It reads: " << endl
-           << endl;
-      this_thread::sleep_for(chrono::seconds(3));
-      cout << "\"You have won, adventurer...For now, that is...\n-The Creator of Destruction\"";
+      p.m_weapon_inventory.push_back(e.m_drop);
+      p.Heal();
+
+      cout << "You have obtained a " << e.m_drop << ". It has been added to your inventory. And of course, your health has replenished!" << endl;
       break;
     }
 
@@ -229,7 +275,8 @@ void Battle(Player &p, Enemy &e)
 
     cout << "\nAlright, it's your turn again! Choose what to do:" << endl
          << "1. Attack" << endl
-         << "2. Block Attack" << endl;
+         << "2. Block Attack" << endl
+         << "3. Change Weapon" << endl;
     cin >> pAction;
   }
 }
@@ -238,13 +285,11 @@ int main()
 {
   // create a player and an enemy
   Player p;
-  Enemy bsParasite("Blood Sucking Parasite", 50, 10);
+  Enemy bsParasite("Blood Sucking Parasite", 50, 10, "dagger");
+  Enemy beZombie("Brain Eating Zombie", 80, 20, "sword");
 
   // holds the playerChoice
   int playerChoice;
-
-  // player action
-  int pAction;
 
   GameIntro(p, playerChoice);
 
@@ -255,6 +300,12 @@ int main()
 
   // battle blood sucking parasite
   Battle(p, bsParasite);
+
+  // encounters a brain eating zombie
+  cout << "Oh, look out " << p.m_name << "! It's a Brain Eating Zombie!" << endl;
+
+  // battle brain eating zombie
+  Battle(p, beZombie);
 
   cout << "\n\nPress Enter to exit...";
   cin.ignore(); // waits for user to press Enter
