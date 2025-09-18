@@ -115,6 +115,16 @@ void HoldScreen(const char *message)
   cin.get();    // makes sure it pauses
 }
 
+// print loading dots
+void LoadingDots()
+{
+  for (int i = 0; i < 3; i++)
+  {
+    cout << ".";
+    this_thread::sleep_for(chrono::milliseconds(750));
+  }
+}
+
 // display player and enemy hp
 void showStats(Player &p, Enemy &e)
 {
@@ -140,6 +150,7 @@ void SwitchWeapon(Player &p)
   else
   {
     cout << "Switching weapon";
+    LoadingDots();
     p.m_selected_weapon = weaponChoice - 1;
     p.UpdateAttack();
   }
@@ -156,11 +167,7 @@ void GameIntro(Player &p, int &playerChoice)
   cin >> playerChoice;
 
   cout << "\nLoading Adventure";
-  for (int i = 0; i < 3; i++)
-  {
-    cout << ".";
-    this_thread::sleep_for(chrono::milliseconds(750));
-  }
+  LoadingDots();
   ClearScreen();
 
   // if player anything except 1, exit the program
@@ -169,6 +176,11 @@ void GameIntro(Player &p, int &playerChoice)
     cout << "Anytime you're ready, Chief!" << endl;
     exit(0);
   }
+}
+
+void GameOutro(const char *playerName)
+{
+  cout << "Thank you, " << playerName << ", for saving us from this chaos. You have been of tremendous help. You came to our world, conquered the evil, and set us free! You must be HIM!" << endl;
 }
 
 void Battle(Player &p, Enemy &e)
@@ -183,11 +195,7 @@ void Battle(Player &p, Enemy &e)
   if (pAction == Run)
   {
     cout << "You chose to run for some reason" << endl;
-    for (int i = 0; i < 3; i++)
-    {
-      cout << ".";
-      this_thread::sleep_for(chrono::milliseconds(750));
-    }
+    LoadingDots();
     return;
   }
 
@@ -246,11 +254,7 @@ void Battle(Player &p, Enemy &e)
       break;
     }
 
-    for (int i = 0; i < 3; i++)
-    {
-      cout << ".";
-      this_thread::sleep_for(chrono::milliseconds(750));
-    }
+    LoadingDots();
     cout << "\n\n";
 
     // if enemy dies, break the while loop
@@ -260,12 +264,7 @@ void Battle(Player &p, Enemy &e)
       int switchWeaponYN;
 
       cout << "You defeated the " << e.m_type << "! That was craaaazyyyyy!" << endl;
-      this_thread::sleep_for(chrono::seconds(2));
-      for (int i = 0; i < 3; i++)
-      {
-        cout << ".";
-        this_thread::sleep_for(chrono::milliseconds(500));
-      }
+      LoadingDots();
 
       p.m_weapon_inventory.push_back(e.m_drop);
       p.Heal();
@@ -301,11 +300,7 @@ void Battle(Player &p, Enemy &e)
       e.DealDamage(p);
     }
 
-    for (int i = 0; i < 3; i++)
-    {
-      cout << ".";
-      this_thread::sleep_for(chrono::milliseconds(750));
-    }
+    LoadingDots();
     cout << endl;
     cout << endl;
 
@@ -348,6 +343,9 @@ int main()
 
   // battle brain eating zombie
   Battle(p, beZombie);
+
+  // game outro
+  GameOutro(p.m_name);
 
   HoldScreen("Press Enter key to exit...");
   return 0;
