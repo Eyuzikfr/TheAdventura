@@ -7,6 +7,7 @@ using namespace std;
 
 const int CRIT_MULTIPLIER = 3;
 const int PLAYER_BASE_ATTACK = 20;
+const int WEAPON_DAMAGE[] = {0, 20, 30};
 
 // random number generator
 random_device rd;
@@ -58,6 +59,10 @@ public:
   {
     m_health = 100;
   }
+  void UpdateAttack()
+  {
+    m_attack = PLAYER_BASE_ATTACK + WEAPON_DAMAGE[m_selected_weapon];
+  }
 };
 
 class Enemy
@@ -101,12 +106,43 @@ void ClearScreen()
 #endif
 }
 
+// hold screen function
+void HoldScreen(const char *message)
+{
+  cout << "\n\n"
+       << message;
+  cin.ignore(); // waits for user to press Enter
+  cin.get();    // makes sure it pauses
+}
+
 // display player and enemy hp
 void showStats(Player &p, Enemy &e)
 {
   cout << p.m_name << "'s HP: " << p.m_health << "   |   "
        << e.m_type << "'s HP: " << e.m_health << endl;
   cout << "Weapon in hand: " << p.m_weapon_inventory[p.m_selected_weapon] << endl;
+}
+
+// switch weapon function
+void SwitchWeapon(Player &p)
+{
+  int weaponChoice;
+  ClearScreen();
+  cout << "Choose Your Weapon: " << endl;
+  p.ShowWeapons();
+  cin >> weaponChoice;
+
+  // if player doesn't have the selected weapon, throw an error
+  if (weaponChoice < 1 || weaponChoice > p.m_weapon_inventory.size())
+  {
+    cout << "Oops! Seems like you don't own that weapon yet. Too late!" << endl;
+  }
+  else
+  {
+    cout << "Switching weapon";
+    p.m_selected_weapon = weaponChoice - 1;
+    p.UpdateAttack();
+  }
 }
 
 void GameIntro(Player &p, int &playerChoice)
@@ -201,22 +237,7 @@ void Battle(Player &p, Enemy &e)
 
     case ChangeWeapon:
     {
-      int weaponChoice;
-      ClearScreen();
-      cout << "Choose Your Weapon: " << endl;
-      p.ShowWeapons();
-      cin >> weaponChoice;
-
-      // if player doesn't have the selected weapon, throw an error
-      if (weaponChoice < 1 || weaponChoice > p.m_weapon_inventory.size())
-      {
-        cout << "Oops! Seems like you don't own that weapon yet. Too late!" << endl;
-      }
-      else
-      {
-        cout << "Switching weapon";
-        p.m_selected_weapon = weaponChoice - 1;
-      }
+      SwitchWeapon(p);
       break;
     }
 
@@ -235,13 +256,33 @@ void Battle(Player &p, Enemy &e)
     // if enemy dies, break the while loop
     if (e.m_health <= 0)
     {
+      // to decide if player wants to switch weapon after killing an enemy
+      int switchWeaponYN;
+
       cout << "You defeated the " << e.m_type << "! That was craaaazyyyyy!" << endl;
       this_thread::sleep_for(chrono::seconds(2));
+      for (int i = 0; i < 3; i++)
+      {
+        cout << ".";
+        this_thread::sleep_for(chrono::milliseconds(500));
+      }
 
       p.m_weapon_inventory.push_back(e.m_drop);
       p.Heal();
 
-      cout << "You have obtained a " << e.m_drop << ". It has been added to your inventory. And of course, your health has replenished!" << endl;
+      cout << "\nCongratulations, you have obtained a " << e.m_drop << ". It has been added to your inventory. And of course, your health has replenished!" << endl;
+      cout << "\nWould you like to switch your weapon?" << endl
+           << "1. Yes" << endl
+           << "2. No" << endl;
+      cin >> switchWeaponYN;
+
+      if (switchWeaponYN == 1)
+      {
+        SwitchWeapon(p);
+      }
+
+      HoldScreen("Alright, hit Enter to move to the next challenge!");
+      ClearScreen();
       break;
     }
 
@@ -302,13 +343,12 @@ int main()
   Battle(p, bsParasite);
 
   // encounters a brain eating zombie
+  showStats(p, beZombie);
   cout << "Oh, look out " << p.m_name << "! It's a Brain Eating Zombie!" << endl;
 
   // battle brain eating zombie
   Battle(p, beZombie);
 
-  cout << "\n\nPress Enter to exit...";
-  cin.ignore(); // waits for user to press Enter
-  cin.get();    // makes sure it pauses
+  HoldScreen("Press Enter key to exit...");
   return 0;
 }
