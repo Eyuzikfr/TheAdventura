@@ -1,3 +1,7 @@
+// TODO: Enemies drop a weapon and a potion
+// TODO: After killing an enemy, the player levels up and the HP increases by 25
+// TODO: Add to game intro: game rules and mechanics (attack vs block and attack)
+// TODO: Use setter/getter function and make member variables private
 #include <iostream>
 #include <random>
 #include <thread>
@@ -72,6 +76,11 @@ public:
   {
     m_attack = PLAYER_BASE_ATTACK + WEAPON_DAMAGE[m_selected_weapon];
   }
+  void UpdatePlayerDefense()
+  {
+    m_defense += 25;
+    m_health += m_defense;
+  }
 };
 
 class Enemy
@@ -82,15 +91,19 @@ public:
   int m_attack;
   string m_drop;
   string m_move;
+  bool m_isFinalBoss;
+  int m_critHitMax; // lower the number, higher the chances of crit hit
 
   // constructor to initalize enemy health and attack
-  Enemy(const char *type, int health, int attack, string drop, string move)
+  Enemy(const char *type, int health, int attack, string drop, string move, bool isFinalBoss, int critHitMax)
   {
     m_type = type;
     m_health = health;
     m_attack = attack;
     m_drop = drop;
     m_move = move;
+    m_isFinalBoss = isFinalBoss;
+    m_critHitMax = critHitMax;
   }
 
   void DealDamage(class Player &player, bool &isCriticalHit)
@@ -270,7 +283,7 @@ void EnemyTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
   }
   else
   {
-    int critHitProb = GetRandomNumber(1, 12);
+    int critHitProb = GetRandomNumber(1, e.m_critHitMax);
     bool isCriticalHit = (critHitProb == CRIT_CHANCE);
     if (isCriticalHit)
     {
@@ -315,19 +328,32 @@ bool CheckEnemyDeath(Player &p, Enemy &e)
 
     p.m_weapon_inventory.push_back(e.m_drop);
     p.Heal();
+    p.UpdatePlayerDefense();
 
-    cout << "\n\nCongratulations, you have obtained a " << e.m_drop << ". It has been added to your inventory. And of course, your health has replenished!" << endl;
-    cout << "\nWould you like to switch your weapon?" << endl
-         << "1. Yes" << endl
-         << "2. No" << endl;
-    cin >> switchWeaponYN;
-
-    if (switchWeaponYN == 1)
+    // if the defeated enemy is not the final boss, let the player change weapon and move to the next challenge
+    if (!e.m_isFinalBoss)
     {
-      SwitchWeapon(p);
-    }
+      cout << "\n\nCongratulations, you have obtained a " << e.m_drop << ". It has been added to your inventory. You have leveled up and your health has replenished!" << endl;
+      cout << "\nWould you like to switch your weapon?" << endl
+           << "1. Yes" << endl
+           << "2. No" << endl;
+      cin >> switchWeaponYN;
 
-    HoldScreen("Alright, hit Enter to move to the next challenge!");
+      if (switchWeaponYN == 1)
+      {
+        SwitchWeapon(p);
+      }
+
+      HoldScreen("Alright, hit Enter to move to the next challenge!");
+    }
+    else
+    {
+      cout << "\n\n";
+      LoadingDots();
+      cout << "With this, you have defeated the final boss. Crazy combat skills!" << endl;
+      LoadingDots();
+      HoldScreen("Hit Enter to proceed, Champion!");
+    }
     ClearScreen();
     return true;
   }
@@ -374,9 +400,9 @@ int main()
 {
   // create a player and an enemy
   Player p;
-  Enemy bsParasite("Blood Sucking Parasite", 50, 10, "dagger", "sting you");
-  Enemy beZombie("Brain Eating Zombie", 80, 20, "sword", "bite you");
-  Enemy ftDragon("Flame Throwing Dragon", 150, 50, "dragon scales", "burn you");
+  Enemy bsParasite("Blood Sucking Parasite", 50, 10, "dagger", "sting you", false, 12);
+  Enemy beZombie("Brain Eating Zombie", 100, 20, "sword", "bite you", false, 8);
+  Enemy ftDragon("Flame Throwing Dragon", 150, 50, "dragon scales", "burn you", true, 5);
 
   // holds the playerChoice
   int playerChoice;
@@ -404,7 +430,7 @@ int main()
   Battle(p, beZombie);
 
   // encounters a flame throwing dragon
-  cout << "It couldn't get worse, or could it?" << p.m_name << "It's a freaking DRAGON! A Flame Throwing Dragon!!\n\n";
+  cout << "It couldn't get worse, or could it? It's a freaking DRAGON! A Flame Throwing Dragon!!\n\n";
   LoadingDots();
   HoldScreen("Press Enter to battle it!");
   ClearScreen();
