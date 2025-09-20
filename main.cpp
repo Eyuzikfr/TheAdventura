@@ -1,7 +1,7 @@
-// TODO: Enemies drop a weapon and a potion
 // ✅ TODO: After killing an enemy, the player levels up and the HP increases by 25
+// ✅ TODO: Use setter/getter function and make member variables private
+// TODO: Enemies drop a weapon and a potion
 // TODO: Add to game intro: game rules and mechanics (attack vs block and attack)
-// TODO: Use setter/getter function and make member variables private
 // TODO: Add feature: Player misses an attack
 #include <iostream>
 #include <random>
