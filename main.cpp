@@ -1,7 +1,8 @@
 // TODO: Enemies drop a weapon and a potion
-// TODO: After killing an enemy, the player levels up and the HP increases by 25
+// ✅ TODO: After killing an enemy, the player levels up and the HP increases by 25
 // TODO: Add to game intro: game rules and mechanics (attack vs block and attack)
 // TODO: Use setter/getter function and make member variables private
+// TODO: Add feature: Player misses an attack
 #include <iostream>
 #include <random>
 #include <thread>
@@ -38,7 +39,7 @@ class Enemy;
 
 class Player
 {
-public:
+private:
   std::string m_name;
   int m_health;
   int m_attack;
@@ -46,6 +47,8 @@ public:
   vector<string> m_weapon_inventory;
   int m_selected_weapon;
 
+public:
+  // constructor
   Player()
   {
     m_health = 100;
@@ -54,11 +57,44 @@ public:
     m_weapon_inventory.push_back("stick");
     m_selected_weapon = 0;
   }
+
+public:
+  std::string GetPlayerName()
+  {
+    return m_name;
+  }
+  void SetPlayerName(std::string name)
+  {
+    m_name = name;
+  }
+  int GetPlayerHealth()
+  {
+    return m_health;
+  }
+  void DecreasePlayerHealth(int damage)
+  {
+    m_health -= damage;
+  }
+  string GetSelectedWeapon()
+  {
+    return m_weapon_inventory[m_selected_weapon];
+  }
+  void SetSelectedWeapon(int index)
+  {
+    m_selected_weapon = index;
+  }
+  int GetInventorySize()
+  {
+    return m_weapon_inventory.size();
+  }
+  void AddWeaponToInventory(std::string weapon)
+  {
+    m_weapon_inventory.push_back(weapon);
+  }
   void TakeDamage(int damage)
   {
     m_health -= damage;
   }
-  void AttackEnemy(class Enemy &enemy, bool isCriticalHit);
   void ShowWeapons()
   {
     int i = 1;
@@ -81,6 +117,7 @@ public:
     m_defense += 25;
     m_health += m_defense;
   }
+  void AttackEnemy(class Enemy &enemy, bool isCriticalHit);
 };
 
 class Enemy
@@ -110,11 +147,11 @@ public:
   {
     if (isCriticalHit)
     {
-      player.m_health -= (m_attack * ENEMY_CRIT_MULTIPLIER);
+      player.DecreasePlayerHealth(m_attack * ENEMY_CRIT_MULTIPLIER);
     }
     else
     {
-      player.m_health -= m_attack;
+      player.DecreasePlayerHealth(m_attack);
     }
   }
 };
@@ -159,9 +196,9 @@ void LoadingDots()
 // display player and enemy hp
 void showStats(Player &p, Enemy &e)
 {
-  cout << p.m_name << "'s HP: " << p.m_health << "   |   "
+  cout << p.GetPlayerName() << "'s HP: " << p.GetPlayerHealth() << "   |   "
        << e.m_type << "'s HP: " << e.m_health << endl;
-  cout << "Weapon in hand: " << p.m_weapon_inventory[p.m_selected_weapon] << endl
+  cout << "Weapon in hand: " << p.GetSelectedWeapon() << endl
        << endl;
 }
 
@@ -175,7 +212,7 @@ void SwitchWeapon(Player &p)
   cin >> weaponChoice;
 
   // if player doesn't have the selected weapon, throw an error
-  if (weaponChoice < 1 || weaponChoice > p.m_weapon_inventory.size())
+  if (weaponChoice < 1 || weaponChoice > p.GetInventorySize())
   {
     cout << "Oops! Seems like you don't own that weapon yet. Too late!" << endl;
   }
@@ -183,7 +220,7 @@ void SwitchWeapon(Player &p)
   {
     cout << "Switching weapon";
     LoadingDots();
-    p.m_selected_weapon = weaponChoice - 1;
+    p.SetSelectedWeapon(weaponChoice - 1);
     p.UpdateAttack();
   }
 }
@@ -191,9 +228,11 @@ void SwitchWeapon(Player &p)
 void GameIntro(Player &p, int &playerChoice)
 {
   // ask for player's name and start the game
+  std::string name;
   cout << "Hey Adventurer, what's your name?\n -> ";
-  cin >> p.m_name;
-  cout << "\nGreat name! Alright " << p.m_name << ", are you ready to begin the adventure?" << endl
+  cin >> name;
+  p.SetPlayerName(name);
+  cout << "\nGreat name! Alright " << p.GetPlayerName() << ", are you ready to begin the adventure?" << endl
        << "1. Yes" << endl
        << "2. No" << endl;
   cin >> playerChoice;
@@ -212,7 +251,7 @@ void GameIntro(Player &p, int &playerChoice)
 
 void GameOutro(Player &p)
 {
-  cout << "Thank you, " << p.m_name << ", for saving us from this chaos. You have been of tremendous help. You came to our world, conquered the evil, and set us free! You must be HIM!" << endl;
+  cout << "Thank you, " << p.GetPlayerName() << ", for saving us from this chaos. You have been of tremendous help. You came to our world, conquered the evil, and set us free! You must be HIM!" << endl;
 }
 
 // player's attack turn
@@ -228,7 +267,7 @@ void PlayerTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
   {
   case Attack:
   {
-    cout << "You attack it with your " << p.m_weapon_inventory[p.m_selected_weapon] << "." << endl;
+    cout << "You attack it with your " << p.GetSelectedWeapon() << "." << endl;
 
     // generate a random number for critical hit
     int critHitProb = GetRandomNumber(1, 10);
@@ -236,12 +275,12 @@ void PlayerTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
     // 1 / 10 chance of a crtitical hit
     if (critHitProb == CRIT_CHANCE)
     {
-      cout << "That's a critical hit, " << p.m_name << ". Awesome!" << endl;
+      cout << "That's a critical hit, " << p.GetPlayerName() << ". Awesome!" << endl;
       p.AttackEnemy(e, true);
     }
     else
     {
-      cout << "Good hit, " << p.m_name << "." << endl;
+      cout << "Good hit, " << p.GetPlayerName() << "." << endl;
       p.AttackEnemy(e, false);
     }
 
@@ -279,7 +318,7 @@ void EnemyTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
   cout << "The " << e.m_type << " tries to " << e.m_move << "!" << endl;
   if (canBlock)
   {
-    cout << "You managed to block the attack, " << p.m_name << "! Sweeeet!" << endl;
+    cout << "You managed to block the attack, " << p.GetPlayerName() << "! Sweeeet!" << endl;
   }
   else
   {
@@ -301,9 +340,9 @@ void EnemyTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
 // check Player death
 bool CheckPlayerDeath(Player &p)
 {
-  if (p.m_health <= 0)
+  if (p.GetPlayerHealth() <= 0)
   {
-    cout << p.m_name << ", you died";
+    cout << p.GetPlayerName() << ", you died";
     LoadingDots();
     cout << "\n\nWith your demise, our only hope of survival has been demolished";
     LoadingDots();
@@ -326,7 +365,7 @@ bool CheckEnemyDeath(Player &p, Enemy &e)
     cout << "You defeated the " << e.m_type << "! That was craaaazyyyyy!" << endl;
     LoadingDots();
 
-    p.m_weapon_inventory.push_back(e.m_drop);
+    p.AddWeaponToInventory(e.m_drop);
     p.Heal();
     p.UpdatePlayerDefense();
 
@@ -364,7 +403,7 @@ void Battle(Player &p, Enemy &e)
 {
 
   // main battle loop
-  while (p.m_health > 0 && e.m_health > 0)
+  while (p.GetPlayerHealth() > 0 && e.m_health > 0)
   {
     showStats(p, e);
     bool canBlock = false, choseDefend = false;
@@ -421,7 +460,7 @@ int main()
   Battle(p, bsParasite);
 
   // encounters a brain eating zombie
-  cout << "Oh, look out " << p.m_name << "! It's a Brain Eating Zombie!\n\n";
+  cout << "Oh, look out " << p.GetPlayerName() << "! It's a Brain Eating Zombie!\n\n";
   LoadingDots();
   HoldScreen("Press Enter to battle it!");
   ClearScreen();
