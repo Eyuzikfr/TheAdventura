@@ -1,12 +1,14 @@
 // ✅ TODO: After killing an enemy, the player levels up and the HP increases by 25
 // ✅ TODO: Use setter/getter function and make member variables private
 // ✅ TODO: Add feature: Player misses an attack
-// TODO: Enemies drop a weapon and a potion
+// TODO: Add feature: Potion drop instead of automatic heal after enemy defeating
 // TODO: Add to game intro: game rules and mechanics (attack vs block and attack)
+// TODO: Add a branching path: Player can choose to battle or explore a cave after battling the first enemy
 #include <iostream>
 #include <random>
 #include <thread>
 #include <vector>
+#include <cctype>
 
 // using namespace std;
 
@@ -17,6 +19,7 @@ const int WEAPON_DAMAGE[] = {0, 20, 30};
 const int CRIT_CHANCE = 10;
 const int DEFEND_CHANCE = 1;
 const int MISS_CHANCE = 1;
+const int DEFENSE_INCREMENT = 25;
 
 // random number generator
 std::random_device rd;
@@ -29,11 +32,23 @@ int GetRandomNumber(int min, int max)
   return dist(gen);
 }
 
+// function to convert string to uppercase
+std::string ToUpperCase(std::string text)
+{
+  for (char &c : text)
+  {
+    c = std::toupper(static_cast<unsigned char>(c));
+  }
+
+  return text;
+}
+
 enum PlayerAction
 {
   Attack = 1,
   Defend = 2,
   ChangeWeapon = 3,
+  ConsumePotion = 4,
 };
 
 class Enemy;
@@ -43,9 +58,11 @@ class Player
 private:
   std::string m_name;
   int m_health;
+  int m_max_health;
   int m_attack;
   int m_defense;
   std::vector<std::string> m_weapon_inventory;
+  std::vector<std::string> m_potion_inventory;
   int m_selected_weapon;
   int m_player_miss_prob_max;
 
@@ -54,6 +71,7 @@ public:
   Player()
   {
     m_health = 100;
+    m_max_health = 100;
     m_attack = PLAYER_BASE_ATTACK;
     m_defense = 0;
     m_weapon_inventory.push_back("stick");
@@ -86,9 +104,17 @@ public:
   {
     m_selected_weapon = index;
   }
-  int GetInventorySize()
+  int GetWeaponInventorySize()
   {
     return m_weapon_inventory.size();
+  }
+  int GetPotionInventorySize()
+  {
+    return m_potion_inventory.size();
+  }
+  std::string GetSelectedPotion(int index)
+  {
+    return m_potion_inventory[index];
   }
   int GetPlayerMisProbMax()
   {
@@ -97,6 +123,14 @@ public:
   void AddWeaponToInventory(std::string weapon)
   {
     m_weapon_inventory.push_back(weapon);
+  }
+  void AddPotionToInventory(std::string potion)
+  {
+    m_potion_inventory.push_back(potion);
+  }
+  void RemovePotionFromInventory(int index)
+  {
+    m_potion_inventory.erase(m_potion_inventory.begin() + index);
   }
   void TakeDamage(int damage)
   {
@@ -107,13 +141,22 @@ public:
     int i = 1;
     for (std::string weapon : m_weapon_inventory)
     {
-      std::cout << i << ". " << weapon << std::endl;
+      std::cout << i << ". " << ToUpperCase(weapon) << std::endl;
+      i++;
+    }
+  }
+  void ShowPotions()
+  {
+    int i = 1;
+    for (std::string potion : m_potion_inventory)
+    {
+      std::cout << i << ". " << ToUpperCase(potion) << std::endl;
       i++;
     }
   }
   void Heal()
   {
-    m_health = 100;
+    m_health = m_max_health;
   }
   void UpdateAttack()
   {
@@ -121,8 +164,9 @@ public:
   }
   void UpdatePlayerDefense()
   {
-    m_defense += 25;
+    m_defense += DEFENSE_INCREMENT;
     m_health += m_defense;
+    m_max_health += m_defense;
     // increase accuracy
     m_player_miss_prob_max += 2;
   }
@@ -135,19 +179,21 @@ private:
   std::string m_type;
   int m_health;
   int m_attack;
-  std::string m_drop;
+  std::string m_weapon_drop;
+  std::string m_potion_drop;
   std::string m_move;
   bool m_isFinalBoss;
   int m_critHitMax; // lower the number, higher the chances of crit hit
 
 public:
   // constructor to initalize enemy health and attack
-  Enemy(const char *type, int health, int attack, std::string drop, std::string move, bool isFinalBoss, int critHitMax)
+  Enemy(const char *type, int health, int attack, std::string weaponDrop, std::string potionDrop, std::string move, bool isFinalBoss, int critHitMax)
   {
     m_type = type;
     m_health = health;
     m_attack = attack;
-    m_drop = drop;
+    m_weapon_drop = weaponDrop;
+    m_potion_drop = potionDrop;
     m_move = move;
     m_isFinalBoss = isFinalBoss;
     m_critHitMax = critHitMax;
@@ -173,11 +219,15 @@ public:
   }
   std::string GetEnemyDrop()
   {
-    return m_drop;
+    return m_weapon_drop;
   }
   bool IsFinalBoss()
   {
     return m_isFinalBoss;
+  }
+  std::string GetEnemyPotionDrop()
+  {
+    return m_potion_drop;
   }
   void DecreaseEnemyHealth(int damage)
   {
@@ -238,7 +288,7 @@ void showStats(Player &p, Enemy &e)
 {
   std::cout << p.GetPlayerName() << "'s HP: " << p.GetPlayerHealth() << "   |   "
             << e.GetEnemyType() << "'s HP: " << e.GetEnemyHealth() << std::endl;
-  std::cout << "Weapon in hand: " << p.GetSelectedWeapon() << std::endl
+  std::cout << "Weapon in hand: " << ToUpperCase(p.GetSelectedWeapon()) << std::endl
             << std::endl;
 }
 
@@ -252,7 +302,7 @@ void SwitchWeapon(Player &p)
   std::cin >> weaponChoice;
 
   // if player doesn't have the selected weapon, throw an error
-  if (weaponChoice < 1 || weaponChoice > p.GetInventorySize())
+  if (weaponChoice < 1 || weaponChoice > p.GetWeaponInventorySize())
   {
     std::cout << "Oops! Seems like you don't own that weapon yet. Too late!" << std::endl;
   }
@@ -262,6 +312,40 @@ void SwitchWeapon(Player &p)
     LoadingDots();
     p.SetSelectedWeapon(weaponChoice - 1);
     p.UpdateAttack();
+  }
+}
+
+// use potion function
+void UsePotion(Player &p)
+{
+  int potionChoice;
+  ClearScreen();
+  std::cout << "Choose a potion to use: " << std::endl;
+  p.ShowPotions();
+  std::cin >> potionChoice;
+
+  // if player doesn't own the potion, return an error
+  if (potionChoice < 1 || potionChoice > p.GetPotionInventorySize())
+  {
+    std::cout << "Oops! Seems like you don't own that potion yet. Too late!" << std::endl;
+  }
+  else
+  {
+    std::string selected_potion = p.GetSelectedPotion(potionChoice - 1);
+    std::cout << "You used the " << selected_potion << "." << std::endl;
+
+    if (selected_potion == "heal potion")
+    {
+      p.Heal();
+      std::cout << "\nHealing";
+      LoadingDots();
+      std::cout << "\n\n";
+    }
+    else if (selected_potion == "attack booster")
+    {
+      // TODO: implement logic that boosts player attack
+    }
+    p.RemovePotionFromInventory(potionChoice - 1);
   }
 }
 
@@ -301,7 +385,8 @@ void PlayerTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
   std::cout << "It's your turn to choose a move. Select an action:" << std::endl
             << "1. Attack" << std::endl
             << "2. Block Attack" << std::endl
-            << "3. Change Weapon" << std::endl;
+            << "3. Change Weapon" << std::endl
+            << "4. Use Potion" << std::endl;
   std::cin >> pAction;
   switch (pAction)
   {
@@ -356,6 +441,10 @@ void PlayerTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
     break;
   }
 
+  case ConsumePotion:
+    UsePotion(p);
+    break;
+
   default:
     std::cout << "Bad choice! Go again!" << std::endl;
     break;
@@ -365,7 +454,7 @@ void PlayerTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
 // enemy's attack turn
 void EnemyTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
 {
-  std::cout << "The " << e.GetEnemyType() << " tries to " << e.GetEnemyMove() << "!" << std::endl;
+  std::cout << "The " << e.GetEnemyType() << " tries to " << e.GetEnemyMove() << " you!" << std::endl;
   if (canBlock)
   {
     std::cout << "You managed to block the attack, " << p.GetPlayerName() << "! Sweeeet!" << std::endl;
@@ -409,27 +498,35 @@ bool CheckEnemyDeath(Player &p, Enemy &e)
   if (e.GetEnemyHealth() <= 0)
   {
     // to decide if player wants to switch weapon after killing an enemy
-    int switchWeaponYN;
+    int weaponOrPotion;
 
     std::cout << "You defeated the " << e.GetEnemyType() << "! That was craaaazyyyyy!" << std::endl;
     LoadingDots();
 
     p.AddWeaponToInventory(e.GetEnemyDrop());
-    p.Heal();
+    p.AddPotionToInventory(e.GetEnemyPotionDrop());
     p.UpdatePlayerDefense();
 
     // if the defeated enemy is not the final boss, let the player change weapon and move to the next challenge
     if (!e.IsFinalBoss())
     {
-      std::cout << "\n\nCongratulations, you have obtained a " << e.GetEnemyDrop() << ". It has been added to your inventory. You have leveled up and your health has replenished!" << std::endl;
-      std::cout << "\nWould you like to switch your weapon?" << std::endl
-                << "1. Yes" << std::endl
-                << "2. No" << std::endl;
-      std::cin >> switchWeaponYN;
+      std::cout << "\nObtained:" << std::endl
+                << ">> Weapon: " << ToUpperCase(e.GetEnemyDrop()) << std::endl
+                << ">> Potion: " << ToUpperCase(e.GetEnemyPotionDrop()) << std::endl
+                << ">> DEFENSE++" << std::endl
+                << ">> ACCURACY++" << std::endl;
+      std::cout << "\nWould you like to switch your weapon or use a potion?" << std::endl
+                << "1. Change Weapon" << std::endl
+                << "2. Use a Potion" << std::endl;
+      std::cin >> weaponOrPotion;
 
-      if (switchWeaponYN == 1)
+      if (weaponOrPotion == 1)
       {
         SwitchWeapon(p);
+      }
+      else if (weaponOrPotion == 2)
+      {
+        UsePotion(p);
       }
 
       HoldScreen("Alright, hit Enter to move to the next challenge!");
@@ -488,9 +585,9 @@ int main()
 {
   // create a player and an enemy
   Player p;
-  Enemy bsParasite("Blood Sucking Parasite", 50, 10, "dagger", "sting you", false, 12);
-  Enemy beZombie("Brain Eating Zombie", 100, 20, "sword", "bite you", false, 8);
-  Enemy ftDragon("Flame Throwing Dragon", 150, 50, "dragon scales", "burn you", true, 5);
+  Enemy bsParasite("Blood Sucking Parasite", 50, 15, "dagger", "heal potion", "sting", false, 12);
+  Enemy beZombie("Brain Eating Zombie", 100, 30, "sword", "attack booster", "bite", false, 8);
+  Enemy ftDragon("Flame Throwing Dragon", 150, 50, "dragon scales", "elixir of life", "burn", true, 5);
 
   // holds the playerChoice
   int playerChoice;
