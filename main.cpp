@@ -1,8 +1,8 @@
 // ✅ TODO: After killing an enemy, the player levels up and the HP increases by 25
 // ✅ TODO: Use setter/getter function and make member variables private
+// ✅ TODO: Add feature: Player misses an attack
 // TODO: Enemies drop a weapon and a potion
 // TODO: Add to game intro: game rules and mechanics (attack vs block and attack)
-// TODO: Add feature: Player misses an attack
 #include <iostream>
 #include <random>
 #include <thread>
@@ -16,6 +16,7 @@ const int PLAYER_BASE_ATTACK = 20;
 const int WEAPON_DAMAGE[] = {0, 20, 30};
 const int CRIT_CHANCE = 10;
 const int DEFEND_CHANCE = 1;
+const int MISS_CHANCE = 1;
 
 // random number generator
 std::random_device rd;
@@ -46,6 +47,7 @@ private:
   int m_defense;
   std::vector<std::string> m_weapon_inventory;
   int m_selected_weapon;
+  int m_player_miss_prob_max;
 
 public:
   // constructor
@@ -56,6 +58,7 @@ public:
     m_defense = 0;
     m_weapon_inventory.push_back("stick");
     m_selected_weapon = 0;
+    m_player_miss_prob_max = 4;
   }
 
 public:
@@ -87,6 +90,10 @@ public:
   {
     return m_weapon_inventory.size();
   }
+  int GetPlayerMisProbMax()
+  {
+    return m_player_miss_prob_max;
+  }
   void AddWeaponToInventory(std::string weapon)
   {
     m_weapon_inventory.push_back(weapon);
@@ -116,6 +123,8 @@ public:
   {
     m_defense += 25;
     m_health += m_defense;
+    // increase accuracy
+    m_player_miss_prob_max += 2;
   }
   void AttackEnemy(class Enemy &enemy, bool isCriticalHit);
 };
@@ -300,6 +309,16 @@ void PlayerTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
   {
     std::cout << "You attack it with your " << p.GetSelectedWeapon() << "." << std::endl;
 
+    // generate a random number for player miss
+    int playerMissProb = GetRandomNumber(1, p.GetPlayerMisProbMax());
+    bool playerMisses = (playerMissProb == MISS_CHANCE);
+
+    if (playerMisses)
+    {
+      std::cout << "Oh no! You missed the attack. Watch out!!!" << std::endl;
+      break;
+    }
+
     // generate a random number for critical hit
     int critHitProb = GetRandomNumber(1, 10);
 
@@ -358,7 +377,6 @@ void EnemyTurn(Player &p, Enemy &e, bool &canBlock, bool &choseDefend)
     if (isCriticalHit)
     {
       std::cout << "The enemy has aimed for a critical hit!" << std::endl;
-      LoadingDots();
     }
     if (choseDefend)
       std::cout << "You fail to block the attack and take the hit. That's baaaaaddddd!" << std::endl;
