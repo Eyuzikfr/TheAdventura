@@ -2,7 +2,7 @@
 // ✅ TODO: Use setter/getter function and make member variables private
 // ✅ TODO: Add feature: Player misses an attack
 // ✅ TODO: Add feature: Potion drop instead of automatic heal after enemy defeating
-// TODO: Add feature: Attack Booster Potion
+// ✅ TODO: Add feature: Attack Booster Potion
 // TODO: Add to game intro: game rules and mechanics
 // TODO: Add a branching path: Player can choose to battle or explore a cave after battling the first enemy
 #include <iostream>
@@ -78,7 +78,6 @@ public:
     m_attack = PLAYER_BASE_ATTACK;
     m_defense = 0;
     m_weapon_inventory.push_back("stick");
-    m_potion_inventory.push_back("heal potion");
     m_selected_weapon = 0;
     m_player_miss_prob_max = 4;
     m_is_attack_boosted = false;
@@ -360,10 +359,10 @@ void UsePotion(Player &p)
     }
     else if (selected_potion == "attack boost")
     {
-      std::cout << "bosst" << std::endl;
       p.SetBoostAttack();
       std::cout << "\nBoosting attack";
     }
+    LoadingDots();
     p.RemovePotionFromInventory(potionChoice - 1);
   }
 }
@@ -522,11 +521,13 @@ bool CheckEnemyDeath(Player &p, Enemy &e)
     std::cout << "You defeated the " << e.GetEnemyType() << "! That was craaaazyyyyy!" << std::endl;
     LoadingDots();
 
+    // if attack is boosted, reset it
     if (p.GetBoostAttack())
+    {
       p.ResetBoostAttack();
-
-    std::cout << "\n\nThe attack booster is wearing off";
-    LoadingDots();
+      std::cout << "\n\nThe attack booster is wearing off";
+      LoadingDots();
+    }
 
     p.AddWeaponToInventory(e.GetEnemyDrop());
     p.AddPotionToInventory(e.GetEnemyPotionDrop());
@@ -607,7 +608,7 @@ int main()
   // create a player and an enemy
   Player p;
   Enemy bsParasite("Blood Sucking Parasite", 50, 15, "dagger", "heal potion", "sting", false, 12);
-  Enemy beZombie("Brain Eating Zombie", 100, 30, "sword", "attack booster", "bite", false, 8);
+  Enemy beZombie("Brain Eating Zombie", 100, 30, "sword", "attack boost", "bite", false, 8);
   Enemy ftDragon("Flame Throwing Dragon", 150, 50, "dragon scales", "elixir of life", "burn", true, 5);
 
   // holds the playerChoice
