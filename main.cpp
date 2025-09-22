@@ -1,8 +1,9 @@
 // ✅ TODO: After killing an enemy, the player levels up and the HP increases by 25
 // ✅ TODO: Use setter/getter function and make member variables private
 // ✅ TODO: Add feature: Player misses an attack
-// TODO: Add feature: Potion drop instead of automatic heal after enemy defeating
-// TODO: Add to game intro: game rules and mechanics (attack vs block and attack)
+// ✅ TODO: Add feature: Potion drop instead of automatic heal after enemy defeating
+// TODO: Add feature: Attack Booster Potion
+// TODO: Add to game intro: game rules and mechanics
 // TODO: Add a branching path: Player can choose to battle or explore a cave after battling the first enemy
 #include <iostream>
 #include <random>
@@ -20,6 +21,7 @@ const int CRIT_CHANCE = 10;
 const int DEFEND_CHANCE = 1;
 const int MISS_CHANCE = 1;
 const int DEFENSE_INCREMENT = 25;
+const int ATTACK_BOOST_MULTIPLIER = 2;
 
 // random number generator
 std::random_device rd;
@@ -65,6 +67,7 @@ private:
   std::vector<std::string> m_potion_inventory;
   int m_selected_weapon;
   int m_player_miss_prob_max;
+  bool m_is_attack_boosted;
 
 public:
   // constructor
@@ -75,8 +78,10 @@ public:
     m_attack = PLAYER_BASE_ATTACK;
     m_defense = 0;
     m_weapon_inventory.push_back("stick");
+    m_potion_inventory.push_back("heal potion");
     m_selected_weapon = 0;
     m_player_miss_prob_max = 4;
+    m_is_attack_boosted = false;
   }
 
 public:
@@ -131,6 +136,18 @@ public:
   void RemovePotionFromInventory(int index)
   {
     m_potion_inventory.erase(m_potion_inventory.begin() + index);
+  }
+  bool GetBoostAttack()
+  {
+    return m_is_attack_boosted;
+  }
+  void SetBoostAttack()
+  {
+    m_is_attack_boosted = true;
+  }
+  void ResetBoostAttack()
+  {
+    m_is_attack_boosted = false;
   }
   void TakeDamage(int damage)
   {
@@ -248,10 +265,12 @@ public:
 
 void Player::AttackEnemy(class Enemy &enemy, bool isCriticalHit)
 {
+  int damage = m_attack;
+  if (m_is_attack_boosted)
+    damage *= ATTACK_BOOST_MULTIPLIER;
   if (isCriticalHit)
-    enemy.DecreaseEnemyHealth(m_attack * PLAYER_CRIT_MULTIPLIER);
-  else
-    enemy.DecreaseEnemyHealth(m_attack);
+    damage *= PLAYER_CRIT_MULTIPLIER;
+  enemy.DecreaseEnemyHealth(damage);
 }
 
 // clear screen function according to platform
@@ -338,12 +357,12 @@ void UsePotion(Player &p)
     {
       p.Heal();
       std::cout << "\nHealing";
-      LoadingDots();
-      std::cout << "\n\n";
     }
-    else if (selected_potion == "attack booster")
+    else if (selected_potion == "attack boost")
     {
-      // TODO: implement logic that boosts player attack
+      std::cout << "bosst" << std::endl;
+      p.SetBoostAttack();
+      std::cout << "\nBoosting attack";
     }
     p.RemovePotionFromInventory(potionChoice - 1);
   }
@@ -503,6 +522,12 @@ bool CheckEnemyDeath(Player &p, Enemy &e)
     std::cout << "You defeated the " << e.GetEnemyType() << "! That was craaaazyyyyy!" << std::endl;
     LoadingDots();
 
+    if (p.GetBoostAttack())
+      p.ResetBoostAttack();
+
+    std::cout << "\n\nThe attack booster is wearing off";
+    LoadingDots();
+
     p.AddWeaponToInventory(e.GetEnemyDrop());
     p.AddPotionToInventory(e.GetEnemyPotionDrop());
     p.UpdatePlayerDefense();
@@ -521,13 +546,9 @@ bool CheckEnemyDeath(Player &p, Enemy &e)
       std::cin >> weaponOrPotion;
 
       if (weaponOrPotion == 1)
-      {
         SwitchWeapon(p);
-      }
       else if (weaponOrPotion == 2)
-      {
         UsePotion(p);
-      }
 
       HoldScreen("Alright, hit Enter to move to the next challenge!");
     }
