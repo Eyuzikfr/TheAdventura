@@ -3,8 +3,9 @@
 // ✅ TODO: Add feature: Player misses an attack
 // ✅ TODO: Add feature: Potion drop instead of automatic heal after enemy defeating
 // ✅ TODO: Add feature: Attack Booster Potion
+// ✅ TODO: Add a branching path: Player can choose to battle or explore a cave after battling the first enemy
 // TODO: Add to game intro: game rules and mechanics
-// TODO: Add a branching path: Player can choose to battle or explore a cave after battling the first enemy
+// TODO: Clean up the UI and make outro more rewarding
 #include <iostream>
 #include <random>
 #include <thread>
@@ -541,20 +542,22 @@ bool CheckEnemyDeath(Player &p, Enemy &e)
                 << ">> Potion: " << ToUpperCase(e.GetEnemyPotionDrop()) << std::endl
                 << ">> DEFENSE++" << std::endl
                 << ">> ACCURACY++" << std::endl;
-      std::cout << "\nWould you like to switch your weapon or use a potion?" << std::endl
-                << "1. Change Weapon" << std::endl
-                << "2. Use a Potion" << std::endl;
-      std::cin >> weaponOrPotion;
+      HoldScreen("Press Enter to continue...");
+      // std::cout << "\nWould you like to switch your weapon or use a potion?" << std::endl
+      //           << "1. Change Weapon" << std::endl
+      //           << "2. Use a Potion" << std::endl;
+      // std::cin >> weaponOrPotion;
 
-      if (weaponOrPotion == 1)
-        SwitchWeapon(p);
-      else if (weaponOrPotion == 2)
-        UsePotion(p);
+      // if (weaponOrPotion == 1)
+      //   SwitchWeapon(p);
+      // else if (weaponOrPotion == 2)
+      //   UsePotion(p);
 
-      HoldScreen("Alright, hit Enter to move to the next challenge!");
+      // HoldScreen("Alright, hit Enter to move to the next challenge!");
     }
     else
     {
+      ClearScreen();
       std::cout << "\n\n";
       LoadingDots();
       std::cout << "With this, you have defeated the final boss. Crazy combat skills!" << std::endl;
@@ -603,6 +606,127 @@ void Battle(Player &p, Enemy &e)
   }
 }
 
+// function for when player is in the cave
+void PlayerInCave(Player &p)
+{
+  bool isExitSelected = false;
+  int pAction;
+  while (!isExitSelected)
+  {
+    ClearScreen();
+    std::cout << "Choose an action:" << std::endl
+              << "1. Change Weapon" << std::endl
+              << "2. Use Potion" << std::endl
+              << "3. Exit Cave" << std::endl;
+    std::cin >> pAction;
+
+    switch (pAction)
+    {
+    case 1:
+      // switch weapon case
+      SwitchWeapon(p);
+      break;
+
+    case 2:
+      // use potion case
+      UsePotion(p);
+      break;
+
+    case 3:
+      // exit cave case
+      std::cout << "Exiting Cave";
+      LoadingDots();
+      isExitSelected = true;
+      break;
+
+    default:
+      std::cout << "Bad Choice! Try again." << std::endl;
+      break;
+    }
+  }
+}
+
+// function for when player is in the dungeon
+void PlayerInDungeon(Player &p, bool &exploresDungeon)
+{
+  bool isExitSelected = false;
+  int pAction;
+  while (!isExitSelected)
+  {
+    ClearScreen();
+    std::cout << "Choose an action:" << std::endl
+              << "1. Change Weapon" << std::endl
+              << "2. Use Potion" << std::endl
+              << "3. Explore Deeper" << std::endl
+              << "4. Exit Dungeon" << std::endl;
+    std::cin >> pAction;
+
+    switch (pAction)
+    {
+    case 1:
+      // switch weapon case
+      SwitchWeapon(p);
+      break;
+
+    case 2:
+      // use potion case
+      UsePotion(p);
+      break;
+
+    case 3:
+      // explore further
+      std::cout << "Exploring Dungeon";
+      LoadingDots();
+      isExitSelected = true;
+      exploresDungeon = true;
+      break;
+
+    case 4:
+      // exit dungeon case
+      std::cout << "Exiting Dungeon";
+      LoadingDots();
+      isExitSelected = true;
+
+    default:
+      std::cout << "Bad Choice! Try again." << std::endl;
+      break;
+    }
+  }
+}
+
+// post battle choice
+void PostBattleChoice(Player &p, bool &exploresDungeon)
+{
+  int playerChoice;
+  bool isInvalidChoice = true;
+  while (isInvalidChoice)
+  {
+    std::cout << "The following choices stand in front of you. What do you choose?" << std::endl
+              << "1. Enter Dungeon" << std::endl
+              << "2. Battle the next enemy" << std::endl;
+    std::cin >> playerChoice;
+
+    if (playerChoice == 1)
+    {
+      std::cout << "Entering Dungeon";
+      LoadingDots();
+      PlayerInDungeon(p, exploresDungeon);
+      isInvalidChoice = false;
+    }
+    else if (playerChoice == 2)
+    {
+      isInvalidChoice = false;
+    }
+    else
+    {
+      std::cout << "Bad choice! Try again." << std::endl;
+      isInvalidChoice = true;
+    }
+  }
+
+  ClearScreen();
+}
+
 int main()
 {
   // create a player and an enemy
@@ -613,6 +737,9 @@ int main()
 
   // holds the playerChoice
   int playerChoice;
+
+  // whether player explores the dungeon
+  bool exploresDungeon = false;
 
   // game intro
   GameIntro(p, playerChoice);
@@ -627,21 +754,36 @@ int main()
   // battle blood sucking parasite
   Battle(p, bsParasite);
 
-  // encounters a brain eating zombie
-  std::cout << "Oh, look out " << p.GetPlayerName() << "! It's a Brain Eating Zombie!\n\n";
-  LoadingDots();
+  // player chooses to enter a cave, a dungeon or battle the next enemy
+  PostBattleChoice(p, exploresDungeon);
+
+  if (!exploresDungeon)
+  { // encounters a brain eating zombie
+    std::cout << "Oh, look out " << p.GetPlayerName() << "! It's a Brain Eating Zombie!\n\n";
+    LoadingDots();
+    HoldScreen("Press Enter to battle it!");
+    ClearScreen();
+
+    // battle brain eating zombie
+    Battle(p, beZombie);
+
+    PostBattleChoice(p, exploresDungeon);
+
+    // encounters a flame throwing dragon
+    std::cout << "It couldn't get worse, or could it? It's a freaking DRAGON! A Flame Throwing Dragon!!\n\n";
+    LoadingDots();
+  }
+
+  if (exploresDungeon)
+  {
+    std::cout << "You hear something";
+    LoadingDots();
+    std::cout << "\n\n";
+    std::cout << "IS THAT...A DRAGONNNNNN????\n\n";
+  }
+
   HoldScreen("Press Enter to battle it!");
   ClearScreen();
-
-  // battle brain eating zombie
-  Battle(p, beZombie);
-
-  // encounters a flame throwing dragon
-  std::cout << "It couldn't get worse, or could it? It's a freaking DRAGON! A Flame Throwing Dragon!!\n\n";
-  LoadingDots();
-  HoldScreen("Press Enter to battle it!");
-  ClearScreen();
-
   // battle the dragon
   Battle(p, ftDragon);
 
