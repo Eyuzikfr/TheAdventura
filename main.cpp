@@ -302,6 +302,64 @@ void LoadingDots()
   }
 }
 
+// how to play
+void HowToPlay()
+{
+  ClearScreen();
+  std::cout << "Alright, Player! Let's get through with this.\n\n"
+            << "The rules are simple. You are in a world full of weird creatures. You have to defeat your enemies to advance forward and eventually win the game.\n\n"
+            << "In each battle, the player and the enemy will take turns to choose their move. The player can choose from following options." << std::endl;
+  HoldScreen("Press Enter to continue...");
+  ClearScreen();
+
+  std::cout << "1. ATTACK:- Deals damage to the enemy based on the weapon held by the player.\n"
+            << "   - There's 10% chance of player landing a critical attack.\n"
+            << "   - There's initially 25% chance of player missing the attack (decreases as accuracy increases).\n"
+            << "   - Weapon Damage:\n"
+            << "      - Stick: 20\n"
+            << "      - Dagger: 40\n"
+            << "      - Sword: 50";
+  HoldScreen("Press Enter to continue...");
+  ClearScreen();
+
+  std::cout << "2. BLOCK ATTACK:- 50% chance that a player blocks the enemy attack.";
+  HoldScreen("Press Enter to continue...");
+  ClearScreen();
+
+  std::cout << "3. CHANGE WEAPON:- Takes your turn to switch to a weapon you own in your inventory. Weapons are dropped by defeated enemies.";
+  HoldScreen("Press Enter to continue...");
+  ClearScreen();
+
+  std::cout << "4. USE POTION:- Takes your turn to use a potion you own in your inventory. Potion details:\n"
+            << "    - HEAL POTION: Heals your health to full HP.\n"
+            << "    - ATTACK BOOST: Doubles your selected weapon attack for one battle.";
+  HoldScreen("Press Enter to continue...");
+  ClearScreen();
+
+  std::cout << "Now, let's talk about the enemy attacks." << std::endl;
+  std::cout << "\n  - An enemy can only choose to attack you."
+            << "\n  - The enemy doesn't miss."
+            << "\n  - The chances of enemy landing a critical hit depends on the type of enemy. As you progress, it gets higher.";
+  HoldScreen("Press Enter to continue...");
+  ClearScreen();
+
+  std::cout << "Defeating an enemy gives you the following:" << std::endl
+            << "  1. A Weapon" << std::endl
+            << "  2. A Potion" << std::endl
+            << "  3. Increased Defense Stat (directly added to your HP)" << std::endl
+            << "  4. Increased Accuracy" << std::endl;
+  HoldScreen("Press Enter to continue...");
+  ClearScreen();
+
+  std::cout
+      << "Post Battle Choices:" << std::endl
+      << "After defeating an enemy, a player may choose to:"
+      << "1. ENTER DUNGEON: Where player can change weapons, use potions, explore deeper, or exit at will." << std::endl
+      << "2. BATTLE NEXT ENEMY: Battle the next enemy without switching weapons or using potions.";
+  HoldScreen("Alright, that's about it, hit Enter to start the adventure...");
+  ClearScreen();
+}
+
 // display player and enemy hp
 void showStats(Player &p, Enemy &e)
 {
@@ -376,19 +434,24 @@ void GameIntro(Player &p, int &playerChoice)
   std::cin >> name;
   p.SetPlayerName(name);
   std::cout << "\nGreat name! Alright " << p.GetPlayerName() << ", are you ready to begin the adventure?" << std::endl
-            << "1. Yes" << std::endl
-            << "2. No" << std::endl;
+            << "1. Start Aventure" << std::endl
+            << "2. How to Play" << std::endl;
   std::cin >> playerChoice;
 
-  std::cout << "\nLoading Adventure";
-  LoadingDots();
-  ClearScreen();
-
   // if player anything except 1, exit the program
-  if (playerChoice != 1)
+  if (playerChoice == 1)
   {
-    std::cout << "Anytime you're ready, Chief!" << std::endl;
+    std::cout << "\nLoading Adventure";
+    LoadingDots();
+    ClearScreen();
     exit(0);
+  }
+  else if (playerChoice == 2)
+  {
+    std::cout << "\nLoading Manual";
+    LoadingDots();
+    ClearScreen();
+    HowToPlay();
   }
 }
 
