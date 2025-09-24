@@ -4,7 +4,7 @@
 // ✅ TODO: Add feature: Potion drop instead of automatic heal after enemy defeating
 // ✅ TODO: Add feature: Attack Booster Potion
 // ✅ TODO: Add a branching path: Player can choose to battle or explore a cave after battling the first enemy
-// TODO: Add to game intro: game rules and mechanics
+// ✅ TODO: Add to game intro: game rules and mechanics
 // TODO: Clean up the UI and make outro more rewarding
 #include <iostream>
 #include <random>
